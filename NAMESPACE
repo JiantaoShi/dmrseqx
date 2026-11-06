@@ -1,0 +1,3 @@
+useDynLib(dmrseqx, .registration = TRUE)
+export(dmrseqx)
+importFrom(BiocGenerics, is.unsorted)

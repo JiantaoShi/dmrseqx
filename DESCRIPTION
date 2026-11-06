@@ -1,0 +1,37 @@
+Package: dmrseqx
+Type: Package
+Title: Fast Detection of Differentially Methylated Regions Following dmrseq
+Version: 0.1.0
+Authors@R: c(
+    person("Jiantao", "Shi", role = c("aut", "cre"), email = "jtshi@cmpt.ac.cn"),
+    person("Keegan", "Korthauer", role = "cph",
+           comment = "author of dmrseq, from which parts of the R code are adapted"))
+Description: Detects differentially methylated regions from bisulfite sequencing
+    counts with the procedure of 'dmrseq' (Korthauer et al. 2019,
+    <doi:10.1093/biostatistics/kxy007>): candidate regions from smoothed
+    differences, a region level generalized least squares model with correlated
+    errors, and a pooled permutation null. All steps are written in C and run in
+    threads, so that a whole genome takes minutes. It compares two or more groups
+    or follows a continuous covariate. It is an independent reimplementation and
+    is not affiliated with the authors of 'dmrseq'.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends:
+    R (>= 4.1.0)
+Imports:
+    bsseq,
+    GenomicRanges,
+    IRanges,
+    matrixStats (>= 1.0.0),
+    methods,
+    S4Vectors,
+    stats,
+    utils,
+    BiocGenerics
+Suggests:
+    dmrseq,
+    locfit,
+    nlme,
+    outliers,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
