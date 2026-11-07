@@ -50,7 +50,8 @@ dmrseqx(bs, testCovariate, adjustCovariate = NULL, cutoff = 0.1, minNumRegion = 
 \details{
 The statistical model and the defaults are those of \code{dmrseq()}. Candidate regions are identical up to rounding errors, including the interpolation
 of the local regression. For regions of at least 40 CpGs, the test statistics agree
-to about 1e-4.
+to about 1e-4, except for rare regions where the restricted likelihood has two optima:
+\code{dmrseqx()} takes the global one, and \code{gls()} ends at either.
 
 Regions of less than 40 CpGs use a correlation that decays with the distance in
 base pairs, and \code{gls()} starts its optimization at a correlation parameter of

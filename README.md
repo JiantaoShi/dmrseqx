@@ -111,8 +111,9 @@ without reading the data.
 Chromosome 21 with 3 vs 3 samples, compared directly with unmodified dmrseq 1.32.0
 (`inst/validation/check_original.R`), all 9 relabellings: all 3,434 regions of the observed
 labels are the same; for at least 40 CpGs the largest difference of the statistic is 4.6e-5;
-below that 98% agree to 1e-3; calls 1,525 and 1,522, of which 1,520 are in both. It took 2.4 s
-at one thread against 493 s at 16 workers.
+below that 98% agree to 1e-3; calls 1,525 and 1,522, of which 1,520 are in both. dmrseqx took
+1.84 s against 1,273 s at one thread, and 0.49 s against 371 s at 16 threads or workers (the
+fastest run of each).
 
 On smaller data (`inst/validation/check_dmrseq.R`), including missing coverage, adjustment
 and matching covariates and unbalanced groups, compared directly with dmrseq 1.32.0 at one
@@ -151,12 +152,56 @@ Differences above 1e-4 are at statistics of 30 to 40, at most 7e-6 in relative t
 dmrseq with 4 groups comes from its dense fit of regions with about 2,000 CpGs, which noise produces
 with so few samples at this cutoff. It isn't a typical gain in speed.
 
-This shows that dmrseqx gives the results of dmrseq on these paths. We haven't evaluated the false
-discovery rate on them, for either program.
+Complete runs of unmodified `dmrseq()` with 10 permutations, and of dmrseqx with the same permutations,
+at one thread each: ESCC chromosomes 21 and 22, about 900,000 CpGs, random labels with 300 simulated
+DMRs or none, 2, 3 and 4 groups and continuous covariates, 30 runs. All 120,914 regions of the observed
+labels have the same coordinates, the statistic differs by at most 9.7e-4 for at least 40 CpGs, 98.0%
+below that agree to 1e-3, and of 3,349 and 3,350 calls at q <= 0.05, 3,339 are in both. dmrseqx was 52
+to 640 times faster.
+
+This shows that dmrseqx gives the results of dmrseq on these paths.
+
+### False discovery rate
+
+We evaluated dmrseqx on whole-genome ESCC samples with random labels, with and without 3,000 simulated
+DMRs as in `dmrseq::simDMRs`: 10 labellings per setting, 10 permutations, cutoffs 0.1, 0.2 and 0.3.
+A call is false if it overlaps no simulated DMR. Observed FDR at q <= 0.05, lowest to highest over the
+three cutoffs:
+
+| Samples | 2 groups | 3 groups | 4 groups | Continuous, even | Continuous, skewed |
+|---|---|---|---|---|---|
+| 9 normal | 0.001 to 0.046 | 0.002 to 0.015 | 0.002 to 0.008 | 0.010 to 0.032 | 0.012 to 0.031 |
+| 19, both tissues, adjusted | 0.001 to 0.006 | 0.002 to 0.017 | | 0.013 to 0.073 | |
+| 10 tumors | 0.067 to 0.12 | 0 | | 0 to 0.025 | 0.096 to 0.19 |
+
+Among normal samples the observed FDR stays at or below the specified level at all levels from 0.005
+to 0.4, and no labelling gives calls at q <= 0.05 without simulated DMRs. The same holds with both
+tissues, except for the continuous covariate: at cutoff 0.1 one labelling gives an FDR of 0.56 at
+q <= 0.05, and at cutoff 0.2 the FDR is at most 0.0012 above the two lowest levels.
+With few samples per group the sensitivity is low: with 4 groups of 2 or 3 samples, 3% to 6% of the
+simulated DMRs at q <= 0.05.
+
+Tumors depend on the labelling. The variance of methylation among normal samples has no leading
+component (15%, 14% and 14% for the first three), while tumors have one (22%, 18% and 12%). Of 40
+labellings of the tumors, 5 give 100 or more calls without simulated DMRs, and 4 of these are the two
+labellings per design with the largest share of variance explained by the labels. Such a labelling
+separates groups that do differ, and the evaluation counts those differences as false. dmrseq does the
+same: on chromosomes 21 and 22, one of these labellings gives 722 calls at q <= 0.05 without simulated
+DMRs in dmrseq and 722 in dmrseqx, 721 of them in both. The sensitivity among tumors is also below 5%
+in all designs. Check whether the variable you test lines up with the main structure of your samples
+before you read many calls as an effect of it.
+
+### Regions of at least 40 CpGs
+
+The restricted likelihood over the correlation can have two optima, for example at 0.86 and 0.99.
+dmrseqx takes the global one, while `nlme::gls()` ends at either, depending on its path. At the higher
+one it can give |beta| > pi, which triggers the refit without weights in dmrseq. On 30 simulated
+datasets this affected 3 of 2,862 long regions, by 1.1 to 2.7 in the statistic, while all others differ
+by at most 7e-5. We didn't see it on the ESCC data.
 
 ### Regions of less than 40 CpGs
 
-This is the only source of larger differences, and it comes from how dmrseq fits these
+This is the main source of larger differences, and it comes from how dmrseq fits these
 regions. Their errors have a correlation that decays with the distance in base pairs,
 and `nlme::gls()` starts its search at a correlation parameter of 0.2. When the CpGs of
 a region are about 8 bp or more apart, the correlation at this value is practically zero
